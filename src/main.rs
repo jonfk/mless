@@ -43,6 +43,8 @@ fn main() {
 
     let mut position: i64 = 0;
 
+    let mut key_buffer: Vec<char> = Vec::new();
+
     print_screen(&rustbox, &contents, position);
 
 
@@ -73,6 +75,17 @@ fn main() {
                         }
                         position = new_position;
                         print_screen(&rustbox, &contents, position);
+                    }
+                    Some(Key::Char(key)) => {
+                        key_buffer.push(key);
+                        if key_buffer.len() >= 2 {
+                            if key_buffer == vec!['g', 'g'] {
+                                position = 0;
+                                print_screen(&rustbox, &contents, position);
+                            }
+                            key_buffer.pop();
+                            key_buffer.pop();
+                        }
                     }
                     _ => { }
                 }
