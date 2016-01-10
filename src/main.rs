@@ -43,30 +43,33 @@ fn main() {
 
     let mut position: i64 = 0;
 
-    let mut key_buffer: Vec<char> = Vec::new();
+    let mut mini_buffer: MiniBuffer = MiniBuffer::new();
+    mini_buffer.set_info(filename);
 
-    print_screen(&rustbox, &contents, position);
+    print_screen(&rustbox,  position, &contents, &mini_buffer);
 
 
     loop {
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 match key {
-                    Some(Key::Char('q')) => { break; }
+                    Some(Key::Char('q')) | Some(Key::Char('Q')) => { break; }
                     Some(Key::Char('j')) => {
                         let height = rustbox.height();
                         if position > ((contents_line_length as i64) - (height as i64)) {
                             continue;
                         }
                         position += 1;
-                        print_screen(&rustbox, &contents, position);
+                        mini_buffer.clear();
+                        print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
                     Some(Key::Char('k')) => {
                         if position == 0 {
                             continue;
                         }
                         position -= 1;
-                        print_screen(&rustbox, &contents, position);
+                        mini_buffer.clear();
+                        print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
                     Some(Key::Char('G')) => {
                         let new_position = ((contents_line_length as i64) - (rustbox.height() as i64)) + 1;
@@ -74,18 +77,25 @@ fn main() {
                             continue;
                         }
                         position = new_position;
-                        print_screen(&rustbox, &contents, position);
+                        mini_buffer.clear();
+                        print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
-                    Some(Key::Char(key)) => {
-                        key_buffer.push(key);
-                        if key_buffer.len() >= 2 {
-                            if key_buffer == vec!['g', 'g'] {
-                                position = 0;
-                                print_screen(&rustbox, &contents, position);
-                            }
-                            key_buffer.pop();
-                            key_buffer.pop();
+                    Some(Key::Char('g')) => {
+                        if mini_buffer.buffer.len() > 0 && mini_buffer.mode == MiniBufferMode::Normal {
+                            position = mini_buffer.buffer.iter().map(|c| *c).collect::<String>().parse::<i64>().unwrap_or(0);
+                            mini_buffer.clear();
+                        } else {
+                            position = 0;
                         }
+                        print_screen(&rustbox,position, &contents, &mini_buffer);
+                    }
+                    Some(Key::Char(key)) if key >= '0' && key <= '9' => {
+                        mini_buffer.buffer.push(key);
+                        print_screen(&rustbox,position, &contents, &mini_buffer);
+                    }
+                    Some(Key::Char('=')) | Some(Key::Ctrl('g')) | Some(Key::Ctrl('G')) | Some(Key::Char('f')) => {
+                        mini_buffer.set_info(filename);
+                        print_screen(&rustbox,position, &contents, &mini_buffer);
                     }
                     _ => { }
                 }
@@ -110,14 +120,49 @@ fn open_file(filename: &str) -> Result<String, String> {
     Ok(contents)
 }
 
-fn print_screen(rustbox: &RustBox, contents: &String, position: i64) {
+fn print_screen(rustbox: &RustBox, position: i64, contents: &String, mini_buffer: &MiniBuffer) {
     rustbox.clear();
-    for (i, line) in contents.lines().skip(position as usize).enumerate() {
+    for (i, line) in contents.lines().skip(position as usize).enumerate().take_while(|&(i,_)| i < rustbox.height() - 1) {
         rustbox.print(0, i, rustbox::RB_NORMAL, Color::White, Color::Black, line);
     }
 
-    rustbox.print(0, rustbox.height()-1, rustbox::RB_BOLD, Color::Black, Color::White,
-                  &format!("Press 'q' to quit. Pos: {}", position));
+    let info_box = mini_buffer.buffer.iter().map(|c| *c).collect::<String>();
+    match mini_buffer.mode {
+        MiniBufferMode::Normal => {
+            rustbox.print(0, rustbox.height()-1, rustbox::RB_NORMAL, Color::White, Color::Black, &(":".to_string() + &info_box));
+        },
+        MiniBufferMode::Info => {
+            rustbox.print(0, rustbox.height()-1, rustbox::RB_NORMAL, Color::Black, Color::White,  &info_box);
+        }
+    }
 
     rustbox.present();
+}
+
+#[derive(Eq,PartialEq)]
+enum MiniBufferMode {
+    Normal,
+    Info,
+}
+
+struct MiniBuffer {
+    buffer: Vec<char>,
+    mode: MiniBufferMode,
+}
+
+impl MiniBuffer {
+    fn new() -> MiniBuffer {
+        MiniBuffer{
+            buffer: Vec::new(),
+            mode: MiniBufferMode::Normal
+        }
+    }
+    fn clear(&mut self) {
+        self.buffer = Vec::new();
+        self.mode = MiniBufferMode::Normal;
+    }
+    fn set_info(&mut self, info: &str) {
+        self.buffer = info.chars().collect::<Vec<_>>();
+        self.mode = MiniBufferMode::Info;
+    }
 }
