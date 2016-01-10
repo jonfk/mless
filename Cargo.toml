@@ -1,0 +1,7 @@
+[package]
+name = "my-less"
+version = "0.1.0"
+authors = ["Jonathan Fok kan <jfokkan@gmail.com>"]
+
+[dependencies]
+rustbox = "0.7.2"
