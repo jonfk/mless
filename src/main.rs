@@ -30,6 +30,8 @@ fn main() {
         },
     };
 
+    let contents_line_length = contents.lines().count();
+
 
     // let rustbox = RustBox::init(Default::default()).unwrap();
     let rustbox = match RustBox::init(Default::default()) {
@@ -39,7 +41,7 @@ fn main() {
         },
     };
 
-    let mut position = 0;
+    let mut position: i64 = 0;
 
     print_screen(&rustbox, &contents, position);
 
@@ -49,11 +51,29 @@ fn main() {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 match key {
                     Some(Key::Char('q')) => { break; }
-                    // Some(Key::Char('j')) => {
-                    //     position += 1;
-                    //     println!("position: {}", position);
-                    //     print_screen(&rustbox, &contents, position);
-                    // }
+                    Some(Key::Char('j')) => {
+                        let height = rustbox.height();
+                        if position > ((contents_line_length as i64) - (height as i64)) {
+                            continue;
+                        }
+                        position += 1;
+                        print_screen(&rustbox, &contents, position);
+                    }
+                    Some(Key::Char('k')) => {
+                        if position == 0 {
+                            continue;
+                        }
+                        position -= 1;
+                        print_screen(&rustbox, &contents, position);
+                    }
+                    Some(Key::Char('G')) => {
+                        let new_position = ((contents_line_length as i64) - (rustbox.height() as i64)) + 1;
+                        if new_position < 0 {
+                            continue;
+                        }
+                        position = new_position;
+                        print_screen(&rustbox, &contents, position);
+                    }
                     _ => { }
                 }
             },
@@ -77,9 +97,9 @@ fn open_file(filename: &str) -> Result<String, String> {
     Ok(contents)
 }
 
-fn print_screen(rustbox: &RustBox, contents: &String, position: usize) {
+fn print_screen(rustbox: &RustBox, contents: &String, position: i64) {
     rustbox.clear();
-    for (i, line) in contents.lines().skip(position).enumerate() {
+    for (i, line) in contents.lines().skip(position as usize).enumerate() {
         rustbox.print(0, i, rustbox::RB_NORMAL, Color::White, Color::Black, line);
     }
 
