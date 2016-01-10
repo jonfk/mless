@@ -9,3 +9,4 @@ My implementation of the less command to learn the Rust programming language.
   - -n  -N  ....  --line-numbers  --LINE-NUMBERS
 - Added better error messages on common errors:
   - opening a directory
+- support more than one file
