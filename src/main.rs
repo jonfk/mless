@@ -40,7 +40,7 @@ fn main() {
         }
     };
 
-    let mut contents = word_wrap(rustbox.width(), orig_contents);
+    let mut contents = word_wrap(orig_contents, rustbox.width());
 
     let mut contents_line_length = contents.lines().count();
 
@@ -171,7 +171,7 @@ fn print_screen(rustbox: &RustBox, position: i64, contents: &String, mini_buffer
     rustbox.present();
 }
 
-fn word_wrap(width: usize, contents: String) -> String {
+fn word_wrap(contents: String, width: usize) -> String {
     contents.lines()
             .map(|s| s.to_string())
             .flat_map(|s| {
@@ -185,6 +185,43 @@ fn word_wrap(width: usize, contents: String) -> String {
             })
             .map(|s| s + "\n")
             .collect::<String>()
+}
+
+#[derive(Eq, PartialEq, Debug)]
+struct Buffer {
+    vec: Vec<Line>,
+}
+
+impl Buffer {
+
+    fn new(contents: String) -> Buffer {
+        let vec = contents.lines()
+            .enumerate().map(|(i, s)| Line{line_num:i+1, line:s.to_string()}).collect::<Vec<_>>();
+        Buffer{
+            vec: vec,
+        }
+    }
+
+    fn line_wrap(self, width: usize) -> Buffer {
+        let vec = self.vec.iter().flat_map(|ln| {
+            if ln.line.len() > width {
+                let l = ln.line.chars().take(width).collect::<String>();
+                let r = ln.line.chars().skip(width).collect::<String>();
+                vec![Line{ line_num: ln.line_num, line: l} , Line{ line_num: ln.line_num, line: r}]
+            } else {
+                vec![ln.clone()]
+            }
+        }).collect::<Vec<_>>();
+        Buffer{
+            vec: vec,
+        }
+    }
+}
+
+#[derive(Eq,PartialEq,Clone, Debug)]
+struct Line {
+    line_num: usize,
+    line: String,
 }
 
 #[derive(Eq,PartialEq)]
