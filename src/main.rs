@@ -26,9 +26,9 @@ fn main() {
     let orig_contents = match open_file(filename) {
         Result::Ok(v) => v,
         Result::Err(e) => {
-            println!("{}",e);
+            println!("{}", e);
             return;
-        },
+        }
     };
 
 
@@ -37,7 +37,7 @@ fn main() {
         Result::Ok(v) => v,
         Result::Err(e) => {
             panic!("{}", e);
-        },
+        }
     };
 
     let mut contents = word_wrap(rustbox.width(), orig_contents);
@@ -49,14 +49,16 @@ fn main() {
     let mut mini_buffer: MiniBuffer = MiniBuffer::new();
     mini_buffer.set_info(filename);
 
-    print_screen(&rustbox,  position, &contents, &mini_buffer);
+    print_screen(&rustbox, position, &contents, &mini_buffer);
 
 
     loop {
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 match key {
-                    Some(Key::Char('q')) | Some(Key::Char('Q')) => { break; }
+                    Some(Key::Char('q')) | Some(Key::Char('Q')) => {
+                        break;
+                    }
                     Some(Key::Char('j')) => {
                         let height = rustbox.height();
                         if position > ((contents_line_length as i64) - (height as i64)) {
@@ -75,7 +77,9 @@ fn main() {
                         print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
                     Some(Key::Char('G')) => {
-                        let new_position = ((contents_line_length as i64) - (rustbox.height() as i64)) + 1;
+                        let new_position = ((contents_line_length as i64) -
+                                            (rustbox.height() as i64)) +
+                                           1;
                         if new_position < 0 {
                             continue;
                         }
@@ -84,25 +88,34 @@ fn main() {
                         print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
                     Some(Key::Char('g')) => {
-                        if mini_buffer.buffer.len() > 0 && mini_buffer.mode == MiniBufferMode::Normal {
-                            position = mini_buffer.buffer.iter().map(|c| *c).collect::<String>().parse::<i64>().unwrap_or(0);
+                        if mini_buffer.buffer.len() > 0 &&
+                           mini_buffer.mode == MiniBufferMode::Normal {
+                            position = mini_buffer.buffer
+                                                  .iter()
+                                                  .map(|c| *c)
+                                                  .collect::<String>()
+                                                  .parse::<i64>()
+                                                  .unwrap_or(0);
                             mini_buffer.clear();
                         } else {
                             position = 0;
                         }
-                        print_screen(&rustbox,position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
                     Some(Key::Char(key)) if key >= '0' && key <= '9' => {
                         mini_buffer.buffer.push(key);
-                        print_screen(&rustbox,position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
-                    Some(Key::Char('=')) | Some(Key::Ctrl('g')) | Some(Key::Ctrl('G')) | Some(Key::Char('f')) => {
+                    Some(Key::Char('=')) |
+                    Some(Key::Ctrl('g')) |
+                    Some(Key::Ctrl('G')) |
+                    Some(Key::Char('f')) => {
                         mini_buffer.set_info(filename);
-                        print_screen(&rustbox,position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &contents, &mini_buffer);
                     }
-                    _ => { }
+                    _ => {}
                 }
-            },
+            }
             Err(e) => panic!("{}", e.description()),
             _ => {
                 unreachable!("rustbox poll_event");
@@ -114,28 +127,44 @@ fn main() {
 fn open_file(filename: &str) -> Result<String, String> {
 
     // Open the path in read-only mode, returns `io::Result<File>`
-    let mut file = try!(File::open(filename).map_err(|err| format!("couldn't open {}: {}", filename, Error::description(&err))));
+    let mut file = try!(File::open(filename).map_err(|err| {
+        format!("couldn't open {}: {}", filename, Error::description(&err))
+    }));
 
     // Read the file contents into a string, returns `io::Result<usize>`
     let mut contents = String::new();
 
-    try!(file.read_to_string(&mut contents).map_err(|err| format!("couldn't read {}: {}", filename, Error::description(&err))));
+    try!(file.read_to_string(&mut contents)
+             .map_err(|err| format!("couldn't read {}: {}", filename, Error::description(&err))));
     Ok(contents)
 }
 
 fn print_screen(rustbox: &RustBox, position: i64, contents: &String, mini_buffer: &MiniBuffer) {
     rustbox.clear();
-    for (i, line) in contents.lines().skip(position as usize).enumerate().take_while(|&(i,_)| i < rustbox.height() - 1) {
+    for (i, line) in contents.lines()
+                             .skip(position as usize)
+                             .enumerate()
+                             .take_while(|&(i, _)| i < rustbox.height() - 1) {
         rustbox.print(0, i, rustbox::RB_NORMAL, Color::White, Color::Black, line);
     }
 
     let info_box = mini_buffer.buffer.iter().map(|c| *c).collect::<String>();
     match mini_buffer.mode {
         MiniBufferMode::Normal => {
-            rustbox.print(0, rustbox.height()-1, rustbox::RB_NORMAL, Color::White, Color::Black, &(":".to_string() + &info_box));
-        },
+            rustbox.print(0,
+                          rustbox.height() - 1,
+                          rustbox::RB_NORMAL,
+                          Color::White,
+                          Color::Black,
+                          &(":".to_string() + &info_box));
+        }
         MiniBufferMode::Info => {
-            rustbox.print(0, rustbox.height()-1, rustbox::RB_NORMAL, Color::Black, Color::White,  &info_box);
+            rustbox.print(0,
+                          rustbox.height() - 1,
+                          rustbox::RB_NORMAL,
+                          Color::Black,
+                          Color::White,
+                          &info_box);
         }
     }
 
@@ -143,15 +172,19 @@ fn print_screen(rustbox: &RustBox, position: i64, contents: &String, mini_buffer
 }
 
 fn word_wrap(width: usize, contents: String) -> String {
-    contents.lines().map(|s| s.to_string() ).flat_map(|s| {
-        if s.len() > width {
-            let mut l = s.chars().take(width).collect::<String>();
-            let mut r = s.chars().skip(width).collect::<String>();
-            vec![l, r]
-        } else {
-            vec![s]
-        }
-    }).map(|s| s + "\n").collect::<String>()
+    contents.lines()
+            .map(|s| s.to_string())
+            .flat_map(|s| {
+                if s.len() > width {
+                    let l = s.chars().take(width).collect::<String>();
+                    let r = s.chars().skip(width).collect::<String>();
+                    vec![l, r]
+                } else {
+                    vec![s]
+                }
+            })
+            .map(|s| s + "\n")
+            .collect::<String>()
 }
 
 #[derive(Eq,PartialEq)]
@@ -167,9 +200,9 @@ struct MiniBuffer {
 
 impl MiniBuffer {
     fn new() -> MiniBuffer {
-        MiniBuffer{
+        MiniBuffer {
             buffer: Vec::new(),
-            mode: MiniBufferMode::Normal
+            mode: MiniBufferMode::Normal,
         }
     }
     fn clear(&mut self) {
