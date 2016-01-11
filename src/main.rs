@@ -40,16 +40,16 @@ fn main() {
         }
     };
 
-    let mut contents = word_wrap(orig_contents, rustbox.width());
+    let mut buffer = Buffer::new(orig_contents).line_wrap(rustbox.width());
 
-    let mut contents_line_length = contents.lines().count();
+    let mut contents_line_length = buffer.len;
 
     let mut position: i64 = 0;
 
     let mut mini_buffer: MiniBuffer = MiniBuffer::new();
     mini_buffer.set_info(filename);
 
-    print_screen(&rustbox, position, &contents, &mini_buffer);
+    print_screen(&rustbox, position, &buffer, &mini_buffer);
 
 
     loop {
@@ -66,7 +66,7 @@ fn main() {
                         }
                         position += 1;
                         mini_buffer.clear();
-                        print_screen(&rustbox, position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
                     Some(Key::Char('k')) => {
                         if position == 0 {
@@ -74,7 +74,7 @@ fn main() {
                         }
                         position -= 1;
                         mini_buffer.clear();
-                        print_screen(&rustbox, position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
                     Some(Key::Char('G')) => {
                         let new_position = ((contents_line_length as i64) -
@@ -85,7 +85,7 @@ fn main() {
                         }
                         position = new_position;
                         mini_buffer.clear();
-                        print_screen(&rustbox, position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
                     Some(Key::Char('g')) => {
                         if mini_buffer.buffer.len() > 0 &&
@@ -100,18 +100,18 @@ fn main() {
                         } else {
                             position = 0;
                         }
-                        print_screen(&rustbox, position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
                     Some(Key::Char(key)) if key >= '0' && key <= '9' => {
                         mini_buffer.buffer.push(key);
-                        print_screen(&rustbox, position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
                     Some(Key::Char('=')) |
                     Some(Key::Ctrl('g')) |
                     Some(Key::Ctrl('G')) |
                     Some(Key::Char('f')) => {
                         mini_buffer.set_info(filename);
-                        print_screen(&rustbox, position, &contents, &mini_buffer);
+                        print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
                     _ => {}
                 }
@@ -139,13 +139,13 @@ fn open_file(filename: &str) -> Result<String, String> {
     Ok(contents)
 }
 
-fn print_screen(rustbox: &RustBox, position: i64, contents: &String, mini_buffer: &MiniBuffer) {
+fn print_screen(rustbox: &RustBox, position: i64, buffer: &Buffer, mini_buffer: &MiniBuffer) {
     rustbox.clear();
-    for (i, line) in contents.lines()
+    for (i, line) in buffer.vec.iter()
                              .skip(position as usize)
                              .enumerate()
                              .take_while(|&(i, _)| i < rustbox.height() - 1) {
-        rustbox.print(0, i, rustbox::RB_NORMAL, Color::White, Color::Black, line);
+        rustbox.print(0, i, rustbox::RB_NORMAL, Color::White, Color::Black, &line.line);
     }
 
     let info_box = mini_buffer.buffer.iter().map(|c| *c).collect::<String>();
@@ -189,6 +189,7 @@ fn word_wrap(contents: String, width: usize) -> String {
 
 #[derive(Eq, PartialEq, Debug)]
 struct Buffer {
+    len: usize,
     vec: Vec<Line>,
 }
 
@@ -197,8 +198,10 @@ impl Buffer {
     fn new(contents: String) -> Buffer {
         let vec = contents.lines()
             .enumerate().map(|(i, s)| Line{line_num:i+1, line:s.to_string()}).collect::<Vec<_>>();
+        let len = vec.len();
         Buffer{
             vec: vec,
+            len: len,
         }
     }
 
@@ -212,8 +215,10 @@ impl Buffer {
                 vec![ln.clone()]
             }
         }).collect::<Vec<_>>();
+        let len = vec.len();
         Buffer{
             vec: vec,
+            len: len,
         }
     }
 }

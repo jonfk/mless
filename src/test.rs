@@ -25,6 +25,7 @@ fn test_to_buffer() {
             Line{line_num: 1, line: "1234567890123456789".to_string()},
             Line{line_num: 2, line: "abcdefgh".to_string()},
             ],
+        len: 2,
     };
     assert_eq!(test, expected);
 }
@@ -44,6 +45,7 @@ fn test_line_wrap_buffer() {
             Line{line_num: 1, line: "123456789".to_string()},
             Line{line_num: 2, line: "abcdefgh".to_string()},
             ],
+        len: 3,
     };
     assert_eq!(test, expected);
 }
