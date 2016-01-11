@@ -20,7 +20,7 @@ fn test_to_buffer() {
 
     let test = Buffer::new(contents.to_string());
 
-    let expected = Buffer{
+    let expected = Buffer {
         vec: vec![
             Line{line_num: 1, line: "1234567890123456789".to_string()},
             Line{line_num: 2, line: "abcdefgh".to_string()},
@@ -39,7 +39,7 @@ fn test_line_wrap_buffer() {
     let test = Buffer::new(contents.to_string()).line_wrap(10);
 
 
-    let expected = Buffer{
+    let expected = Buffer {
         vec: vec![
             Line{line_num: 1, line: "1234567890".to_string()},
             Line{line_num: 1, line: "123456789".to_string()},

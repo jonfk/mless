@@ -141,11 +141,17 @@ fn open_file(filename: &str) -> Result<String, String> {
 
 fn print_screen(rustbox: &RustBox, position: i64, buffer: &Buffer, mini_buffer: &MiniBuffer) {
     rustbox.clear();
-    for (i, line) in buffer.vec.iter()
-                             .skip(position as usize)
-                             .enumerate()
-                             .take_while(|&(i, _)| i < rustbox.height() - 1) {
-        rustbox.print(0, i, rustbox::RB_NORMAL, Color::White, Color::Black, &line.line);
+    for (i, line) in buffer.vec
+                           .iter()
+                           .skip(position as usize)
+                           .enumerate()
+                           .take_while(|&(i, _)| i < rustbox.height() - 1) {
+        rustbox.print(0,
+                      i,
+                      rustbox::RB_NORMAL,
+                      Color::White,
+                      Color::Black,
+                      &line.line);
     }
 
     let info_box = mini_buffer.buffer.iter().map(|c| *c).collect::<String>();
@@ -194,29 +200,45 @@ struct Buffer {
 }
 
 impl Buffer {
-
     fn new(contents: String) -> Buffer {
         let vec = contents.lines()
-            .enumerate().map(|(i, s)| Line{line_num:i+1, line:s.to_string()}).collect::<Vec<_>>();
+                          .enumerate()
+                          .map(|(i, s)| {
+                              Line {
+                                  line_num: i + 1,
+                                  line: s.to_string(),
+                              }
+                          })
+                          .collect::<Vec<_>>();
         let len = vec.len();
-        Buffer{
+        Buffer {
             vec: vec,
             len: len,
         }
     }
 
     fn line_wrap(self, width: usize) -> Buffer {
-        let vec = self.vec.iter().flat_map(|ln| {
-            if ln.line.len() > width {
-                let l = ln.line.chars().take(width).collect::<String>();
-                let r = ln.line.chars().skip(width).collect::<String>();
-                vec![Line{ line_num: ln.line_num, line: l} , Line{ line_num: ln.line_num, line: r}]
-            } else {
-                vec![ln.clone()]
-            }
-        }).collect::<Vec<_>>();
+        let vec = self.vec
+                      .iter()
+                      .flat_map(|ln| {
+                          if ln.line.len() > width {
+                              let l = ln.line.chars().take(width).collect::<String>();
+                              let r = ln.line.chars().skip(width).collect::<String>();
+                              vec![Line {
+                                       line_num: ln.line_num,
+                                       line: l,
+                                   },
+                                   Line {
+                                       line_num: ln.line_num,
+                                       line: r,
+                                   }]
+                          } else {
+                              vec![ln.clone()]
+                          }
+                      })
+                      .collect::<Vec<_>>();
         let len = vec.len();
-        Buffer{
+        Buffer {
             vec: vec,
             len: len,
         }
