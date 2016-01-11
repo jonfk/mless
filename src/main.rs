@@ -10,6 +10,7 @@ use std::fs::File;
 use rustbox::{Color, RustBox};
 use rustbox::Key;
 
+mod test;
 
 fn main() {
     let args: Vec<_> = env::args().skip(1).collect();
@@ -22,15 +23,13 @@ fn main() {
     // Only support 1 file for now
     let filename = &args[0];
 
-    let contents = match open_file(filename) {
+    let orig_contents = match open_file(filename) {
         Result::Ok(v) => v,
         Result::Err(e) => {
             println!("{}",e);
             return;
         },
     };
-
-    let contents_line_length = contents.lines().count();
 
 
     // let rustbox = RustBox::init(Default::default()).unwrap();
@@ -40,6 +39,10 @@ fn main() {
             panic!("{}", e);
         },
     };
+
+    let mut contents = word_wrap(rustbox.width(), orig_contents);
+
+    let mut contents_line_length = contents.lines().count();
 
     let mut position: i64 = 0;
 
@@ -137,6 +140,18 @@ fn print_screen(rustbox: &RustBox, position: i64, contents: &String, mini_buffer
     }
 
     rustbox.present();
+}
+
+fn word_wrap(width: usize, contents: String) -> String {
+    contents.lines().map(|s| s.to_string() ).flat_map(|s| {
+        if s.len() > width {
+            let mut l = s.chars().take(width).collect::<String>();
+            let mut r = s.chars().skip(width).collect::<String>();
+            vec![l, r]
+        } else {
+            vec![s]
+        }
+    }).map(|s| s + "\n").collect::<String>()
 }
 
 #[derive(Eq,PartialEq)]
