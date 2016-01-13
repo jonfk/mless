@@ -49,3 +49,26 @@ fn test_line_wrap_buffer() {
     };
     assert_eq!(test, expected);
 }
+
+#[test]
+#[ignore]
+/// Creates a large file of about 1G
+///
+fn create_large_file() {
+    use std::io::prelude::*;
+    use std::fs::File;
+    use std::fs;
+
+    let filename = "large_file.txt";
+
+    let mut f = File::create(filename).unwrap();
+
+    let mut meta = fs::metadata(filename).unwrap();
+    let mut i: usize = 0;
+
+    while meta.len() < 1000000000 {
+        f.write_all( &format!("{} {}", i, "Hello, world!\n").into_bytes()[..]).unwrap();
+        meta = fs::metadata(filename).unwrap();
+        i += 1;
+    }
+}
