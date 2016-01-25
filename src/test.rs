@@ -18,12 +18,13 @@ fn test_to_buffer() {
     use super::Line;
     let contents = "1234567890123456789\nabcdefgh";
 
-    let test = Buffer::new(contents.to_string());
+    let test = Buffer::new(contents);
 
     let expected = Buffer {
+        orig: contents,
         vec: vec![
-            Line{line_num: 1, line: "1234567890123456789".to_string()},
-            Line{line_num: 2, line: "abcdefgh".to_string()},
+            Line{line_num: 1, line: "1234567890123456789"},
+            Line{line_num: 2, line: "abcdefgh"},
             ],
         len: 2,
     };
@@ -36,14 +37,15 @@ fn test_line_wrap_buffer() {
     use super::Line;
     let contents = "1234567890123456789\nabcdefgh";
 
-    let test = Buffer::new(contents.to_string()).line_wrap(10);
+    let test = Buffer::new(contents).line_wrap(10);
 
 
     let expected = Buffer {
+        orig: contents,
         vec: vec![
-            Line{line_num: 1, line: "1234567890".to_string()},
-            Line{line_num: 1, line: "123456789".to_string()},
-            Line{line_num: 2, line: "abcdefgh".to_string()},
+            Line{line_num: 1, line: "1234567890"},
+            Line{line_num: 1, line: "123456789"},
+            Line{line_num: 2, line: "abcdefgh"},
             ],
         len: 3,
     };
