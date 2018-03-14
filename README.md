@@ -1,9 +1,10 @@
-#my-less
+# my-less
 [![Build Status](https://travis-ci.org/jonfk/mless.svg)](https://travis-ci.org/jonfk/mless)
 
 My implementation of the less command to learn the Rust programming language.
 
-##TODO
+## TODO
+
 - more navigation
 - searching
 - command line flags:

@@ -56,10 +56,10 @@ fn main() {
         match rustbox.poll_event(false) {
             Ok(rustbox::Event::KeyEvent(key)) => {
                 match key {
-                    Some(Key::Char('q')) | Some(Key::Char('Q')) => {
+                    Key::Char('q') | Key::Char('Q') => {
                         break;
                     }
-                    Some(Key::Char('j')) => {
+                    Key::Char('j') => {
                         let height = rustbox.height();
                         if position > ((contents_line_length as i64) - (height as i64)) {
                             continue;
@@ -68,7 +68,7 @@ fn main() {
                         mini_buffer.clear();
                         print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
-                    Some(Key::Char('k')) => {
+                    Key::Char('k') => {
                         if position == 0 {
                             continue;
                         }
@@ -76,10 +76,9 @@ fn main() {
                         mini_buffer.clear();
                         print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
-                    Some(Key::Char('G')) => {
-                        let new_position = ((contents_line_length as i64) -
-                                            (rustbox.height() as i64)) +
-                            1;
+                    Key::Char('G') => {
+                        let new_position =
+                            ((contents_line_length as i64) - (rustbox.height() as i64)) + 1;
                         if new_position < 0 {
                             continue;
                         }
@@ -87,29 +86,26 @@ fn main() {
                         mini_buffer.clear();
                         print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
-                    Some(Key::Char('g')) => {
+                    Key::Char('g') => {
                         if mini_buffer.buffer.len() > 0 &&
-                            mini_buffer.mode == MiniBufferMode::Normal {
-                                position = mini_buffer.buffer
-                                    .iter()
-                                    .map(|c| *c)
-                                    .collect::<String>()
-                                    .parse::<i64>()
-                                    .unwrap_or(0);
-                                mini_buffer.clear();
-                            } else {
-                                position = 0;
-                            }
+                           mini_buffer.mode == MiniBufferMode::Normal {
+                            position = mini_buffer.buffer
+                                .iter()
+                                .map(|c| *c)
+                                .collect::<String>()
+                                .parse::<i64>()
+                                .unwrap_or(0);
+                            mini_buffer.clear();
+                        } else {
+                            position = 0;
+                        }
                         print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
-                    Some(Key::Char(key)) if key >= '0' && key <= '9' => {
+                    Key::Char(key) if key >= '0' && key <= '9' => {
                         mini_buffer.buffer.push(key);
                         print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
-                    Some(Key::Char('=')) |
-                    Some(Key::Ctrl('g')) |
-                    Some(Key::Ctrl('G')) |
-                    Some(Key::Char('f')) => {
+                    Key::Char('=') | Key::Ctrl('g') | Key::Ctrl('G') | Key::Char('f') => {
                         mini_buffer.set_info(filename);
                         print_screen(&rustbox, position, &buffer, &mini_buffer);
                     }
@@ -127,15 +123,14 @@ fn main() {
 fn open_file(filename: &str) -> Result<String, String> {
 
     // Open the path in read-only mode, returns `io::Result<File>`
-    let mut file = try!(File::open(filename).map_err(|err| {
-        format!("couldn't open {}: {}", filename, Error::description(&err))
-    }));
+    let mut file = try!(File::open(filename)
+        .map_err(|err| format!("couldn't open {}: {}", filename, Error::description(&err))));
 
     // Read the file contents into a string, returns `io::Result<usize>`
     let mut contents = String::new();
 
     try!(file.read_to_string(&mut contents)
-         .map_err(|err| format!("couldn't read {}: {}", filename, Error::description(&err))));
+        .map_err(|err| format!("couldn't read {}: {}", filename, Error::description(&err))));
     Ok(contents)
 }
 
@@ -146,13 +141,13 @@ fn print_screen(rustbox: &RustBox, position: i64, buffer: &Buffer, mini_buffer: 
         .skip(position as usize)
         .enumerate()
         .take_while(|&(i, _)| i < rustbox.height() - 1) {
-            rustbox.print(0,
-                          i,
-                          rustbox::RB_NORMAL,
-                          Color::White,
-                          Color::Black,
-                          &line.line);
-        }
+        rustbox.print(0,
+                      i,
+                      rustbox::RB_NORMAL,
+                      Color::White,
+                      Color::Black,
+                      &line.line);
+    }
 
     let info_box = mini_buffer.buffer.iter().map(|c| *c).collect::<String>();
     match mini_buffer.mode {
@@ -180,14 +175,12 @@ fn print_screen(rustbox: &RustBox, position: i64, buffer: &Buffer, mini_buffer: 
 fn word_wrap(contents: String, width: usize) -> String {
     contents.lines()
         .map(|s| s.to_string())
-        .flat_map(|s| {
-            if s.len() > width {
-                let l = s.chars().take(width).collect::<String>();
-                let r = s.chars().skip(width).collect::<String>();
-                vec![l, r]
-            } else {
-                vec![s]
-            }
+        .flat_map(|s| if s.len() > width {
+            let l = s.chars().take(width).collect::<String>();
+            let r = s.chars().skip(width).collect::<String>();
+            vec![l, r]
+        } else {
+            vec![s]
         })
         .map(|s| s + "\n")
         .collect::<String>()
@@ -222,21 +215,19 @@ impl<'a> Buffer<'a> {
     fn line_wrap(self, width: usize) -> Buffer<'a> {
         let vec = self.vec
             .iter()
-            .flat_map(|ln| {
-                if ln.line.len() > width {
-                    let string_l = ln.line.chars().take(width).collect::<String>();
-                    let len_l = (&string_l).len();
-                    vec![Line {
-                        line_num: ln.line_num,
-                        line: &ln.line[0..len_l],
-                    },
-                         Line {
-                             line_num: ln.line_num,
-                             line: &ln.line[len_l..],
-                         }]
-                } else {
-                    vec![ln.clone()]
-                }
+            .flat_map(|ln| if ln.line.len() > width {
+                let string_l = ln.line.chars().take(width).collect::<String>();
+                let len_l = (&string_l).len();
+                vec![Line {
+                         line_num: ln.line_num,
+                         line: &ln.line[0..len_l],
+                     },
+                     Line {
+                         line_num: ln.line_num,
+                         line: &ln.line[len_l..],
+                     }]
+            } else {
+                vec![ln.clone()]
             })
             .collect::<Vec<_>>();
         let len = vec.len();
